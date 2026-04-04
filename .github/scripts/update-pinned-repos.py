@@ -66,7 +66,7 @@ def update_readme(section_md):
     with open(README_PATH, "r") as f:
         content = f.read()
 
-    pattern = r"(<!-- PINNED-REPOS:START -->)\n.*?\n(<!-- PINNED-REPOS:END -->)"
+    pattern = r"(<!-- PINNED-REPOS:START -->)\n.*?(<!-- PINNED-REPOS:END -->)"
     replacement = rf"\1\n{section_md}\2"
     updated = re.sub(pattern, replacement, content, flags=re.DOTALL)
 
