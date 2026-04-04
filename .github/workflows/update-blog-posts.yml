@@ -28,7 +28,7 @@ jobs:
       - name: Fetch pinned repos and update README
         run: python .github/scripts/update-pinned-repos.py
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
       - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
