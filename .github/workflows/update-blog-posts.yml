@@ -30,3 +30,6 @@ jobs:
           feed_list: "https://medium.com/feed/@janani.umapathyk"
           comment_tag_name: "BLOG-POST-LIST"
           max_post_count: 5
+
+      - name: Push all changes
+        run: git push || echo "Nothing to push"
