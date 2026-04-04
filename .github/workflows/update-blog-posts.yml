@@ -1,0 +1,36 @@
+name: Update README
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight UTC
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  update-blog-posts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pull latest Medium posts
+        uses: gautamkrishnar/blog-post-workflow@v1
+        with:
+          feed_list: "https://medium.com/feed/@janani.umapathyk"
+          comment_tag_name: "BLOG-POST-LIST"
+          max_post_count: 5
+
+  update-pinned-repos:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pinned repos and update README
+        run: python .github/scripts/update-pinned-repos.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet README.md || (git add README.md && git commit -m "docs: update pinned repositories" && git push)
