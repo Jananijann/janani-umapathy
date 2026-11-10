@@ -1,15 +1,15 @@
 import json
 import os
 import re
+import urllib.error
 import urllib.request
 
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
-USERNAME = "Jananijann"
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_PAT", "")
 README_PATH = "README.md"
 
 QUERY = """
 {
-  user(login: "%s") {
+  viewer {
     pinnedItems(first: 6, types: REPOSITORY) {
       nodes {
         ... on Repository {
@@ -26,21 +26,38 @@ QUERY = """
     }
   }
 }
-""" % USERNAME
+"""
 
 
 def fetch_pinned_repos():
+    if not GITHUB_TOKEN:
+        raise RuntimeError("Missing GitHub token. Set GITHUB_TOKEN or GH_PAT in the workflow environment.")
+
     req = urllib.request.Request(
         "https://api.github.com/graphql",
         data=json.dumps({"query": QUERY}).encode(),
         headers={
             "Authorization": f"Bearer {GITHUB_TOKEN}",
             "Content-Type": "application/json",
+            "Accept": "application/vnd.github+json",
         },
     )
-    with urllib.request.urlopen(req) as resp:
-        data = json.loads(resp.read().decode())
-    return data["data"]["user"]["pinnedItems"]["nodes"]
+
+    try:
+        with urllib.request.urlopen(req) as resp:
+            data = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(
+            f"GitHub API request failed with status {exc.code}: {exc.reason}. "
+            f"Check that the token is valid and has access to the repository/user data. Response: {body}"
+        ) from exc
+
+    viewer = data.get("data", {}).get("viewer")
+    if not viewer:
+        raise RuntimeError(f"GitHub API response did not include viewer data: {data}")
+
+    return viewer.get("pinnedItems", {}).get("nodes", [])
 
 
 def build_markdown(repos):
